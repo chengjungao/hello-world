@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +25,7 @@ public class BIOServer {
 	
 	public static void main(String[] args) throws IOException {
 		
-		ExecutorService poll = new ThreadPoolExecutor(2, 10,
+		ExecutorService pool = new ThreadPoolExecutor(2, 10,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
                 new ThreadFactory() {
@@ -56,24 +59,24 @@ public class BIOServer {
 		try(ServerSocket serverSocket = new ServerSocket(8080)){
 			while (true) {
 				Socket socket = serverSocket.accept();
-				poll.submit(new Runnable() {
+				pool.submit(new Runnable() {
 					
 					@Override
 					public void run() {
 						try {
 							InputStream is = socket.getInputStream();
-							//OutputStream os = socket.getOutputStream();
+							OutputStream os = socket.getOutputStream();
 							BufferedReader br = new BufferedReader(new InputStreamReader(is,StandardCharsets.UTF_8));
 							String line = null;
 							while((line = br.readLine()) != null) {
 								logger.debug("From Client: {}" , line);
+								
+								//send response
+								PrintWriter pw = new PrintWriter(new OutputStreamWriter(os,StandardCharsets.UTF_8)); 
+								pw.println("From Server, I revice your message : " + line.toString()); 
+								pw.flush();
 							}
 							
-							/*
-							 * PrintWriter pw = new PrintWriter(new OutputStreamWriter(os,
-							 * StandardCharsets.UTF_8)); pw.print("From Server, I revice your message : " +
-							 * sb.toString()); pw.flush();
-							 */
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
